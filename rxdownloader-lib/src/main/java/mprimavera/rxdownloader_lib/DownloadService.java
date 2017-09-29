@@ -1,6 +1,5 @@
 package mprimavera.rxdownloader_lib;
 
-import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -112,13 +111,17 @@ public class DownloadService {
 
                                     percent = newPercent;
                                     emitter.onNext(new TransferProgress(percent, Double.parseDouble(result), total, tlength));
+                                    if(percent == 100) {
+                                        emitter.onComplete();
+                                        output.flush();
+                                        output.close();
+                                        input.close();
+                                        break;
+                                    }
+
                                     firstTime = secondTime;
                                 }
                             }
-
-                            output.flush();
-                            output.close();
-                            input.close();
                         }
                     } catch (IOException e) {
                         emitter.onError(e);

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import java.io.File;
 import java.io.IOException;
@@ -19,11 +20,12 @@ public class RxDownload {
     private String mSaveTo;
     private Activity mActivity;
     private int progress;
-    private IProgressListener mListener;
     private ProgressDialog mProgressDialogFragment;
+    private ProgressBar mProgress;
 
     public RxDownload() {
-        mListener = null;
+        mProgress = null;
+        mProgressDialogFragment = null;
     }
 
     public RxDownload url(String url) {
@@ -31,13 +33,18 @@ public class RxDownload {
         return this;
     }
 
-    public RxDownload saveTo(String path) {
-        mSaveTo = path;
+    public RxDownload progressInto(ProgressBar progress) {
+        mProgress = progress;
         return this;
     }
 
-    public RxDownload listener(IProgressListener listener) {
-        mListener = listener;
+    public RxDownload showDialog() {
+        getProgressDialog(mActivity, R.string.app_name);
+        return this;
+    }
+
+    public RxDownload saveTo(String path) {
+        mSaveTo = path;
         return this;
     }
 
@@ -47,68 +54,72 @@ public class RxDownload {
     }
 
     public RxDownload start() {
-        if(mListener != null)
-            return null;
-
-        getProgressDialog(mActivity, R.string.app_name);
-
         RxPermissions rxPermissions = new RxPermissions(mActivity); // where this is an Activity instance
         rxPermissions
-                .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean granted) throws Exception {
-                        if (granted) {
-                            File saveTo = new File(mSaveTo);
-                            if(!saveTo.exists()) {
-                                try {
-                                    saveTo.createNewFile();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
+            .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            .subscribe(new Consumer<Boolean>() {
+                @Override
+                public void accept(Boolean granted) throws Exception {
+                if (granted) {
+                    File saveTo = getOrCreateFile(mSaveTo);
+                    Observable<DownloadService.TransferProgress> download = DownloadService
+                        .downloadFile(saveTo, mUrl)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnSubscribe(new Consumer<Disposable>() {
+                            @Override
+                            public void accept(Disposable disposable) throws Exception {
+                            if(mProgressDialogFragment != null) showProgressDialog();
                             }
+                        })
+                        .doOnError(new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) throws Exception {
+                            //if (mBaseView != null) mBaseView.showErrorMessage("Network resource not available");
+                            }
+                        })
+                        .doOnTerminate(new Action() {
+                            @Override
+                            public void run() throws Exception {
+                                if(mProgressDialogFragment != null)
+                                    dismissProgressDialog();
+                            }
+                        });
 
-                            Observable<DownloadService.TransferProgress> download = DownloadService
-                                    .downloadFile(saveTo, mUrl)
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .doOnSubscribe(new Consumer<Disposable>() {
-                                        @Override
-                                        public void accept(Disposable disposable) throws Exception {
-                                            showProgressDialog();
-                                        }
-                                    })
-                                    .doOnError(new Consumer<Throwable>() {
-                                        @Override
-                                        public void accept(Throwable throwable) throws Exception {
-                                            //if (mBaseView != null) mBaseView.showErrorMessage("Network resource not available");
-                                        }
-                                    })
-                                    .doOnTerminate(new Action() {
-                                        @Override
-                                        public void run() throws Exception {
-                                            dismissProgressDialog();
-                                        }
-                                    });
-
-                            download
-                                    .subscribe(new Consumer<DownloadService.TransferProgress>() {
-                                        @Override
-                                        public void accept(DownloadService.TransferProgress transferProgress) throws Exception {
-                                            mProgressDialogFragment.setProgress(transferProgress.getProgress());
-                                            mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
-                                            mProgressDialogFragment.setTotal(transferProgress.getTotal(), transferProgress.getLength());
-                                        }
-                                    }, new Consumer<Throwable>() {
-                                        @Override
-                                        public void accept(Throwable throwable) throws Exception {
-                                        }
-                                    });
-                                }
+                    download
+                        .subscribe(new Consumer<DownloadService.TransferProgress>() {
+                            @Override
+                            public void accept(DownloadService.TransferProgress transferProgress) throws Exception {
+                            if(mProgressDialogFragment != null) {
+                                mProgressDialogFragment.setProgress(transferProgress.getProgress());
+                                mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
+                                mProgressDialogFragment.setTotal(transferProgress.getTotal(), transferProgress.getLength());
+                            } else if(mProgress != null) {
+                                mProgress.setProgress(transferProgress.getProgress());
+                            }
+                            }
+                        }, new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) throws Exception {
+                            }
+                        });
+                    }
                     }
                 });
 
         return this;
+    }
+
+    public File getOrCreateFile(String path) {
+        File file = new File(path);
+        if(!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return file;
     }
 
     public interface IProgressListener {
@@ -116,7 +127,6 @@ public class RxDownload {
         void error();
         void completed();
     }
-
 
     public void getProgressDialog(Activity activity, int messageRes) {
         Bundle args = new Bundle();
