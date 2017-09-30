@@ -32,15 +32,25 @@ All this can be done with a few lines of code through **RxTransfer** :
 
 In case you don't wanna implement your own **UI**, but just show a basic **ProgressDialog** for keeping the user informed of the download operation, you may use 
 
-```java
-  new RxDownload()
-      .activity(this)
-      .saveTo(filePath)
-      .url(url)
-      .showDialog()
-      .completedMessage("Operation Completed", mLayout)
-      .start();
-```
+
+<table>
+    <tr>
+        <td>
+           <pre lang="java">
+            new RxDownload()
+                .activity(this)
+                .saveTo(testFilePath)
+                .url(url)
+                .showDialog() // Show Dialog fragment including ProgressBar
+                .completedMessage("Operation Completed", mLayout)
+                .start();
+           </pre>
+        </td>
+        <td>
+            <img src="docs/screenshots/progress_dialog_fragment_sample.png"  width="200" height="400" />
+        </td>
+    </tr>
+</table>
 
 ### Future Improvements 
 - **RxUpload** class 
