@@ -3,13 +3,18 @@ package mprimavera.rxdownloader_lib;
 import android.Manifest;
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import java.io.File;
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 public class RxDownload {
     private static int loaderId = 0;
@@ -95,9 +100,6 @@ public class RxDownload {
                     Observable<DownloadService.TransferProgress> download = DownloadService
                         .downloadFile(saveTo, mUrl)
                         .compose(RxTools.bind(mActivity, loaderId))
-                        .doOnSubscribe(disposable -> {
-                            if(mProgressDialogFragment != null) showProgressDialog();
-                        })
                         .doOnError(throwable -> {
                             if (mView != null)
                                 DialogBuilder.showMessage("Network resource not available", mView);
@@ -111,22 +113,28 @@ public class RxDownload {
                             }
                         });
 
-                    download
-                        .subscribe(transferProgress -> {
-                            int progress1 = transferProgress.getProgress();
-                            if(mProgressDialogFragment != null) {
-                                mProgressDialogFragment.setProgress(progress1);
-                                mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
-                                mProgressDialogFragment.setTotal(
-                                    transferProgress.getTotal(),
-                                    transferProgress.getLength()
-                                );
-                            } else if(mProgress != null) {
-                                mProgress.setProgress(progress1);
-                            } else if (mUseListener) {
-                                mConsumer.accept(progress1);
-                            }
-                        }, throwable -> {});
+                            Observable.fromCallable(() -> {
+                                showProgressDialog();
+                                return true;
+                            })
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .flatMap(t -> download)
+                            .subscribe(transferProgress -> {
+                                int progress1 = transferProgress.getProgress();
+                                if(mProgressDialogFragment != null) {
+                                    mProgressDialogFragment.setProgress(progress1);
+                                    mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
+                                    mProgressDialogFragment.setTotal(
+                                        transferProgress.getTotal(),
+                                        transferProgress.getLength()
+                                    );
+                                } else if(mProgress != null) {
+                                    mProgress.setProgress(progress1);
+                                } else if (mUseListener) {
+                                    mConsumer.accept(progress1);
+                                }
+                            }, throwable -> {});
                 }
         });
 
