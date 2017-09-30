@@ -72,3 +72,6 @@ dependencies {
 
 ## Samples 
 Look [here](https://github.com/MattiaPrimavera/RxTransfer/tree/master/app/src/main/java/mprimavera/rxdownloader) for Samples
+
+## Contributions / Feature requests
+Feel free to open an **issue** to propose a feature request or a **pull request** if you wanna contribute ;)
