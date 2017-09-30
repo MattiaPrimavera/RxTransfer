@@ -14,7 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import mprimavera.rxdownloader_lib.RxDownload;
 
@@ -46,14 +46,16 @@ public class MainActivity extends AppCompatActivity
         String testFilePath = path + "/testFile";
         String url = "http://ipv4.download.thinkbroadband.com/200MB.zip";
         mLayout = findViewById(R.id.mainLayout);
-
-        new RxDownload()
+        TextView textView = findViewById(R.id.textView);
+        textView.setOnClickListener(view -> {
+            new RxDownload()
                 .activity(this)
                 .saveTo(testFilePath)
                 .url(url)
                 .showDialog()
                 .completedMessage("Operation Completed", mLayout)
                 .start();
+        });
     }
 
     @Override
@@ -99,7 +101,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_gallery) {
             startActivityWithClass(ListenerSample.class);
         } else if (id == R.id.nav_slideshow) {
-
+            startActivityWithClass(ProgressBarListSample.class);
         } else if (id == R.id.nav_manage) {
 
         } else if (id == R.id.nav_share) {

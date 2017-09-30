@@ -26,6 +26,7 @@ public class ProgressDialog extends DialogFragment {
         mMessage = mView.findViewById(R.id.progressText);
         mSpeed = mView.findViewById(R.id.speedText);
         mTotal = mView.findViewById(R.id.totalText);
+        this.setCancelable(false);
     }
 
     public void setContext(Context context) {
