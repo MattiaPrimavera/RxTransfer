@@ -9,6 +9,7 @@ import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import java.io.File;
 import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
@@ -20,15 +21,14 @@ public class RxDownload {
     private Activity mActivity;
     private int progress;
     private Consumer<Integer> mConsumer;
-    private boolean mUseListener;
-    private ProgressDialog mProgressDialogFragment;
+    private boolean mUseListener, mShowProgressDialog;
     private ProgressBar mProgress;
     private String mCompletedMessage;
     private View mView;
+    private static ProgressDialog mProgressDialogFragment;
 
     public RxDownload() {
         mProgress = null;
-        mProgressDialogFragment = null;
         mConsumer = null;
         mUseListener = false;
         mCompletedMessage = null;
@@ -69,13 +69,13 @@ public class RxDownload {
         return this;
     }
 
-    public RxDownload showDialog() {
-        getProgressDialog(mActivity, R.string.app_name);
+    public RxDownload saveTo(String path) {
+        mSaveTo = path;
         return this;
     }
 
-    public RxDownload saveTo(String path) {
-        mSaveTo = path;
+    public RxDownload showDialog() {
+        mShowProgressDialog = true;
         return this;
     }
 
@@ -85,7 +85,7 @@ public class RxDownload {
     }
 
     public RxDownload start() {
-        if(!mUseListener && mProgress == null && mProgressDialogFragment == null)
+        if(!mUseListener && mProgress == null && !mShowProgressDialog)
             return null;
 
         RxPermissions rxPermissions = new RxPermissions(mActivity); // where this is an Activity instance
@@ -93,7 +93,10 @@ public class RxDownload {
             .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             .subscribe(granted -> {
                 if (granted) {
+                    // Create Destination File
                     File saveTo = Tools.getOrCreateFile(mSaveTo);
+
+                    // Download Observable
                     Observable<DownloadService.TransferProgress> download = DownloadService
                         .downloadFile(saveTo, mUrl)
                         .compose(RxTools.bind(mActivity, loaderId))
@@ -102,69 +105,63 @@ public class RxDownload {
                                 DialogBuilder.showMessage("Network resource not available", mView);
                         })
                         .doOnTerminate(() -> {
-                            if(mProgressDialogFragment != null)
-                                dismissProgressDialog();
-
                             if(mCompletedMessage != null) {
                                 DialogBuilder.showMessage(mCompletedMessage, mView);
                             }
                         });
 
-                    if(mProgressDialogFragment != null) {
-                        Observable.fromCallable(() -> {
-                            showProgressDialog();
-                            return true;
-                        })
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .flatMap(t -> download)
+                    // Show Progress Dialog Fragment
+                    if(mShowProgressDialog) {
+                        download = download
+                            .compose(showDialog(mActivity, R.string.app_name));
+                    }
+
+                    // Subscribe to Observable
+                    download
                         .subscribe(transferProgress -> {
                             int progress1 = transferProgress.getProgress();
-                            if(mProgressDialogFragment != null) {
+                            if(mProgress != null) {
+                                mProgress.setProgress(progress1);
+                            } else if (mUseListener) {
+                                mConsumer.accept(progress1);
+                            } else if(mProgressDialogFragment != null) {
                                 mProgressDialogFragment.setProgress(progress1);
                                 mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
                                 mProgressDialogFragment.setTotal(
                                         transferProgress.getTotal(),
                                         transferProgress.getLength()
                                 );
-                            } else if(mProgress != null) {
-                                mProgress.setProgress(progress1);
-                            } else if (mUseListener) {
-                                mConsumer.accept(progress1);
                             }
                         }, throwable -> {});
-                    } else {
-                        download
-                            .subscribe(transferProgress -> {
-                                int progress1 = transferProgress.getProgress();
-                                if(mProgress != null) {
-                                    mProgress.setProgress(progress1);
-                                } else if (mUseListener) {
-                                    mConsumer.accept(progress1);
-                                }
-                            }, throwable -> {});
-                    }
                 }
-        });
+            });
 
         return this;
     }
 
-    public void getProgressDialog(Activity activity, int messageRes) {
+    public static <T> ObservableTransformer<T, T> showDialog(final Activity activity, int messageRes) {
+        return observable -> Observable.fromCallable(() -> {
+            showProgressDialog(activity, messageRes);
+            return true;
+        })
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .flatMap(t -> observable)
+        .doOnTerminate(() -> dismissProgressDialog());
+    }
+
+    public static void showProgressDialog(Activity activity, int messageRes) {
         Bundle args = new Bundle();
         args.putInt("message_res", messageRes);
         mProgressDialogFragment = new ProgressDialog(activity);
         mProgressDialogFragment.setArguments(args);
-    }
-
-    public void showProgressDialog() {
         mProgressDialogFragment.show(
-            ((FragmentActivity)mActivity).getSupportFragmentManager(),
+            ((FragmentActivity)activity).getSupportFragmentManager(),
             "progressdialog"
         );
     }
 
-    public void dismissProgressDialog() {
+    public static void dismissProgressDialog() {
         if (mProgressDialogFragment.getActivity() != null) {
             mProgressDialogFragment.dismissAllowingStateLoss();
         }
