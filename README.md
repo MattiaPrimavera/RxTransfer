@@ -82,6 +82,13 @@ dependencies {
 ## Samples 
 Look [here](https://github.com/MattiaPrimavera/RxTransfer/tree/master/app/src/main/java/mprimavera/rxdownloader) for Samples
 
+## Soon coming
+- RxUpload class
+- propose a set of default UI widgets to directly include within the layout
+- retry policies on error : restart download automatically / restart button
+- cancel download
+- stop / resume download
+
 ## Contributions / Feature requests
 Feel free to open an **issue** to propose a feature request or a **pull request** if you wanna contribute ;)
 
