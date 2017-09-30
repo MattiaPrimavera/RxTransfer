@@ -34,6 +34,10 @@ public class DialogBuilder {
         return new DialogBuilder(context, style);
     }
 
+    public static void showMessage(String message, View view) {
+        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
+    }
+
     public static void showMessage(String message, String action, int color, View.OnClickListener listener, View view){
         Snackbar.make(view, message, Snackbar.LENGTH_LONG)
                 .setAction(action, listener)

@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_camera) {
             startActivityWithClass(ProgressBarSample.class);
         } else if (id == R.id.nav_gallery) {
-
+            startActivityWithClass(ListenerSample.class);
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {

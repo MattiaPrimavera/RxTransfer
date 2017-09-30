@@ -23,6 +23,7 @@
         </activity>
 
         <activity android:name=".ProgressBarSample" />
+        <activity android:name=".ListenerSample" />
     </application>
 
 </manifest>

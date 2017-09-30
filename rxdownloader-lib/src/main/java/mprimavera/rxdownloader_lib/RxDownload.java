@@ -20,12 +20,16 @@ public class RxDownload {
     private String mSaveTo;
     private Activity mActivity;
     private int progress;
+    private Consumer<Integer> mConsumer;
+    private boolean mUseListener;
     private ProgressDialog mProgressDialogFragment;
     private ProgressBar mProgress;
 
     public RxDownload() {
         mProgress = null;
         mProgressDialogFragment = null;
+        mConsumer = null;
+        mUseListener = false;
     }
 
     public RxDownload url(String url) {
@@ -35,6 +39,12 @@ public class RxDownload {
 
     public RxDownload progressInto(ProgressBar progress) {
         mProgress = progress;
+        return this;
+    }
+
+    public RxDownload listener(Consumer<Integer> consumer) {
+        mConsumer = consumer;
+        mUseListener = true;
         return this;
     }
 
@@ -54,6 +64,9 @@ public class RxDownload {
     }
 
     public RxDownload start() {
+        if(!mUseListener && mProgress == null && mProgressDialogFragment == null)
+            return null;
+
         RxPermissions rxPermissions = new RxPermissions(mActivity); // where this is an Activity instance
         rxPermissions
             .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -90,13 +103,16 @@ public class RxDownload {
                         .subscribe(new Consumer<DownloadService.TransferProgress>() {
                             @Override
                             public void accept(DownloadService.TransferProgress transferProgress) throws Exception {
-                            if(mProgressDialogFragment != null) {
-                                mProgressDialogFragment.setProgress(transferProgress.getProgress());
-                                mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
-                                mProgressDialogFragment.setTotal(transferProgress.getTotal(), transferProgress.getLength());
-                            } else if(mProgress != null) {
-                                mProgress.setProgress(transferProgress.getProgress());
-                            }
+                                int progress = transferProgress.getProgress();
+                                if(mProgressDialogFragment != null) {
+                                    mProgressDialogFragment.setProgress(progress);
+                                    mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
+                                    mProgressDialogFragment.setTotal(transferProgress.getTotal(), transferProgress.getLength());
+                                } else if(mProgress != null) {
+                                    mProgress.setProgress(progress);
+                                } else if (mUseListener) {
+                                    mConsumer.accept(progress);
+                                }
                             }
                         }, new Consumer<Throwable>() {
                             @Override
@@ -123,7 +139,7 @@ public class RxDownload {
     }
 
     public interface IProgressListener {
-        void update(int progress);
+        void publish(int progress);
         void error();
         void completed();
     }
