@@ -3,9 +3,9 @@ package mprimavera.rxdownloader;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -14,10 +14,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.LinearLayout;
+
 import mprimavera.rxdownloader_lib.RxDownload;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+    private ConstraintLayout mLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,13 +30,8 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show());
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -47,11 +45,14 @@ public class MainActivity extends AppCompatActivity
         String path = Environment.getExternalStorageDirectory().getAbsolutePath();
         String testFilePath = path + "/testFile";
         String url = "http://ipv4.download.thinkbroadband.com/200MB.zip";
+        mLayout = findViewById(R.id.mainLayout);
+
         new RxDownload()
                 .activity(this)
                 .saveTo(testFilePath)
                 .url(url)
                 .showDialog()
+                .completedMessage("Operation Completed", mLayout)
                 .start();
     }
 
