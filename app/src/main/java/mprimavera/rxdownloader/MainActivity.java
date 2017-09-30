@@ -14,8 +14,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
-
 import mprimavera.rxdownloader_lib.RxDownload;
 
 public class MainActivity extends AppCompatActivity
@@ -46,8 +44,8 @@ public class MainActivity extends AppCompatActivity
         String testFilePath = path + "/testFile";
         String url = "http://ipv4.download.thinkbroadband.com/200MB.zip";
         mLayout = findViewById(R.id.mainLayout);
-        TextView textView = findViewById(R.id.textView);
-        textView.setOnClickListener(view -> {
+
+        findViewById(R.id.startDownload).setOnClickListener(view -> {
             new RxDownload()
                 .activity(this)
                 .saveTo(testFilePath)
