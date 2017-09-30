@@ -75,7 +75,7 @@ And add next dependencies in the build.gradle of the module:
 
 ```
 dependencies {
-    compile 'com.github.MattiaPrimavera:RxTransfer:0.12'
+    compile 'com.github.MattiaPrimavera:RxTransfer:0.13'
 }
 ```
 
