@@ -12,15 +12,24 @@ Never been this easy to download a file while tracking downloading progress!
 Here's the different ways in which **download progress** can be tracked:
 - within a `ProgressDialog` fragment 
 
-```java
-new RxDownload()
-    .activity(this)
-    .saveTo(testFilePath)
-    .url(url)
-    .showDialog() // Show Dialog fragment including ProgressBar
-    .completedMessage("Operation Completed", mLayout)
-    .start();
-```
+<table>
+    <tr>
+        <td>
+           <pre lang="java">
+            new RxDownload()
+                .activity(this)
+                .saveTo(testFilePath)
+                .url(url)
+                .showDialog() // Show Dialog fragment including ProgressBar
+                .completedMessage("Operation Completed", mLayout)
+                .start();
+           </pre>
+        </td>
+        <td>
+            <img src="docs/screenshots/progress_dialog_fragment_sample.png"  width="200" height="400" />
+        </td>
+    </tr>
+</table>
 
 - within your own `ProgressBar` instance 
 
