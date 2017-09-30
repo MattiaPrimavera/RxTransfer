@@ -6,6 +6,8 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
+
 import mprimavera.rxdownloader_lib.DialogBuilder;
 import mprimavera.rxdownloader_lib.RxDownload;
 
@@ -19,6 +21,7 @@ public class ListenerSample extends AppCompatActivity {
         mLayout = findViewById(R.id.mainLayout);
 
         final ProgressBar progressBar = findViewById(R.id.progress);
+        final TextView progressText = findViewById(R.id.progressText);
 
         String path = Environment.getExternalStorageDirectory().getAbsolutePath();
         String testFilePath = path + "/testFile";
@@ -29,6 +32,7 @@ public class ListenerSample extends AppCompatActivity {
             .saveTo(testFilePath)
             .listener(progress -> {
                 progressBar.setProgress(progress);
+                progressText.setText(Integer.toString(progress));
 
                 if(progress == 100)
                     DialogBuilder.showMessage("Operation Completed", mLayout);
