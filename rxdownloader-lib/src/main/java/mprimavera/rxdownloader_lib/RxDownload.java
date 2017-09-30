@@ -4,10 +4,13 @@ import android.Manifest;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import java.io.File;
+import java.util.HashMap;
+
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -25,7 +28,7 @@ public class RxDownload {
     private ProgressBar mProgress;
     private String mCompletedMessage;
     private View mView;
-    private static ProgressDialog mProgressDialogFragment;
+    private static HashMap<String, Observable> mCache = new HashMap<>();
 
     public RxDownload() {
         mProgress = null;
@@ -95,39 +98,20 @@ public class RxDownload {
                 if (granted) {
                     // Create Destination File
                     File saveTo = Tools.getOrCreateFile(mSaveTo);
-
-                    // Download Observable
-                    Observable<DownloadService.TransferProgress> download = DownloadService
-                        .downloadFile(saveTo, mUrl)
-                        .compose(RxTools.bind(mActivity, loaderId))
-                        .doOnError(throwable -> {
-                            if (mView != null)
-                                DialogBuilder.showMessage("Network resource not available", mView);
-                        })
-                        .doOnTerminate(() -> {
-                            if(mCompletedMessage != null) {
-                                DialogBuilder.showMessage(mCompletedMessage, mView);
-                            }
-                        });
-
-                    // Show Progress Dialog Fragment
-                    if(mShowProgressDialog) {
-                        download = download
-                            .compose(showDialog(mActivity, R.string.app_name));
-                    }
-
-                    // Subscribe to Observable
-                    download
+                    Log.d("TEST", "STARTING download");
+                    download(mUrl, saveTo)
                         .subscribe(transferProgress -> {
+                            Log.d("TEST", "Subscriber called ... current progress is ... ");
+                            Log.d("TEST", "progress: " + transferProgress.getProgress());
                             int progress1 = transferProgress.getProgress();
                             if(mProgress != null) {
                                 mProgress.setProgress(progress1);
                             } else if (mUseListener) {
                                 mConsumer.accept(progress1);
-                            } else if(mProgressDialogFragment != null) {
-                                mProgressDialogFragment.setProgress(progress1);
-                                mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
-                                mProgressDialogFragment.setTotal(
+                            } else if(RxTools.progressDialog != null) {
+                                RxTools.progressDialog.setProgress(progress1);
+                                RxTools.progressDialog.setSpeed(transferProgress.getSpeed());
+                                RxTools.progressDialog.setTotal(
                                         transferProgress.getTotal(),
                                         transferProgress.getLength()
                                 );
@@ -139,11 +123,45 @@ public class RxDownload {
         return this;
     }
 
+    public Observable<DownloadService.TransferProgress> download(String url, File saveTo) {
+        if(mCache.containsKey(url)) {
+            Log.d("TEST", "Returning cached observable");
+            return mCache.get(url);
+        }
+
+        // Download Observable
+        Observable<DownloadService.TransferProgress> download = DownloadService
+                .downloadFile(saveTo, url)
+                .compose(RxTools.applySchedulers())
+//                .compose(RxTools.bind(mActivity, loaderId))
+                .doOnError(throwable -> {
+                    if (mView != null)
+                        DialogBuilder.showMessage("Network resource not available", mView);
+                })
+                .doOnTerminate(() -> {
+                    if(mCompletedMessage != null) {
+                        DialogBuilder.showMessage(mCompletedMessage, mView);
+                    }
+                });
+
+        // Show Progress Dialog Fragment
+        if(mShowProgressDialog) {
+            download = download
+                    .compose(showDialog(mActivity, R.string.app_name));
+        }
+
+        // Subscr@ibe to Observable
+        download = download.cache();
+        mCache.put(url, download);
+        return download;
+    }
+
     public static <T> ObservableTransformer<T, T> showDialog(final Activity activity, int messageRes) {
         return observable -> Observable.fromCallable(() -> {
             showProgressDialog(activity, messageRes);
             return true;
         })
+//        .compose(RxTools.bind(activity, loaderId+1))
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .flatMap(t -> observable)
@@ -151,20 +169,25 @@ public class RxDownload {
     }
 
     public static void showProgressDialog(Activity activity, int messageRes) {
+        Log.d("TEST", "ShowProgressDialog called");
         Bundle args = new Bundle();
         args.putInt("message_res", messageRes);
-        mProgressDialogFragment = new ProgressDialog(activity);
-        mProgressDialogFragment.setArguments(args);
-        mProgressDialogFragment.show(
+
+        if(RxTools.progressDialog == null) {
+            RxTools.progressDialog = new ProgressDialog(activity);
+            RxTools.progressDialog.setArguments(args);
+        }
+        RxTools.progressDialog.show(
             ((FragmentActivity)activity).getSupportFragmentManager(),
             "progressdialog"
         );
     }
 
     public static void dismissProgressDialog() {
-        if (mProgressDialogFragment.getActivity() != null) {
-            mProgressDialogFragment.dismissAllowingStateLoss();
+        Log.d("TEST", "Dismiss progressDialog called");
+        if (RxTools.progressDialog.getActivity() != null) {
+            RxTools.progressDialog.dismissAllowingStateLoss();
         }
-        mProgressDialogFragment = null;
+        RxTools.progressDialog = null;
     }
 }
