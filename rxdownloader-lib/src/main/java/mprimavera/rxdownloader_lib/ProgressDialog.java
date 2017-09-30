@@ -1,5 +1,6 @@
 package mprimavera.rxdownloader_lib;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -12,12 +13,19 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.schedulers.Schedulers;
+
 public class ProgressDialog extends DialogFragment {
     private final String SPEED_SUFFIX = " Mb/s";
     private Context mContext;
     private TextView mMessage, mSpeed, mTotal;
     private ProgressBar mProgress;
     private View mView;
+    private static int loaderId = 0;
 
     public ProgressDialog(Context context) {
         mContext = context;
@@ -27,6 +35,7 @@ public class ProgressDialog extends DialogFragment {
         mSpeed = mView.findViewById(R.id.speedText);
         mTotal = mView.findViewById(R.id.totalText);
         this.setCancelable(false);
+        loaderId++;
     }
 
     public void setContext(Context context) {
@@ -36,6 +45,14 @@ public class ProgressDialog extends DialogFragment {
     public void setProgress(int progress) {
         mProgress.setProgress(progress);
         mMessage.setText(progress + " %");
+
+        if(progress == 100) {
+            Observable
+                .empty()
+                .delay(1, TimeUnit.SECONDS)
+                .compose(RxTools.bind((Activity) mContext, loaderId))
+                .subscribe(o -> this.dismiss());
+        }
     }
 
     public void setSpeed(double speed) {
