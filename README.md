@@ -69,3 +69,6 @@ dependencies {
     compile 'com.github.MattiaPrimavera:RxTransfer:0.11'
 }
 ```
+
+## Samples 
+Look [here](https://github.com/MattiaPrimavera/RxTransfer/tree/master/app/src/main/java/mprimavera/rxdownloader) for Samples
