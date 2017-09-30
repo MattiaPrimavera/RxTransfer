@@ -3,10 +3,7 @@ package mprimavera.rxdownloader_lib;
 import android.Manifest;
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
@@ -113,28 +110,40 @@ public class RxDownload {
                             }
                         });
 
-                            Observable.fromCallable(() -> {
-                                showProgressDialog();
-                                return true;
-                            })
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .flatMap(t -> download)
-                            .subscribe(transferProgress -> {
-                                int progress1 = transferProgress.getProgress();
-                                if(mProgressDialogFragment != null) {
-                                    mProgressDialogFragment.setProgress(progress1);
-                                    mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
-                                    mProgressDialogFragment.setTotal(
+                    if(mProgressDialogFragment != null) {
+                        Observable.fromCallable(() -> {
+                            showProgressDialog();
+                            return true;
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .flatMap(t -> download)
+                        .subscribe(transferProgress -> {
+                            int progress1 = transferProgress.getProgress();
+                            if(mProgressDialogFragment != null) {
+                                mProgressDialogFragment.setProgress(progress1);
+                                mProgressDialogFragment.setSpeed(transferProgress.getSpeed());
+                                mProgressDialogFragment.setTotal(
                                         transferProgress.getTotal(),
                                         transferProgress.getLength()
-                                    );
-                                } else if(mProgress != null) {
+                                );
+                            } else if(mProgress != null) {
+                                mProgress.setProgress(progress1);
+                            } else if (mUseListener) {
+                                mConsumer.accept(progress1);
+                            }
+                        }, throwable -> {});
+                    } else {
+                        download
+                            .subscribe(transferProgress -> {
+                                int progress1 = transferProgress.getProgress();
+                                if(mProgress != null) {
                                     mProgress.setProgress(progress1);
                                 } else if (mUseListener) {
                                     mConsumer.accept(progress1);
                                 }
                             }, throwable -> {});
+                    }
                 }
         });
 
