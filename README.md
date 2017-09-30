@@ -18,7 +18,7 @@ Here's the different ways in which **download progress** can be tracked:
            <pre lang="java">
             new RxDownload()
                 .activity(this)
-                .saveTo(testFilePath)
+                .saveTo(path)
                 .url(url)
                 .showDialog() // Show Dialog fragment including ProgressBar
                 .completedMessage("Operation Completed", mLayout)
@@ -36,7 +36,7 @@ Here's the different ways in which **download progress** can be tracked:
 ```java
 new RxDownload()
     .activity(this)
-    .saveTo(testFilePath)
+    .saveTo(path)
     .progressInto(progress) // Provide ProgressBar instance
     .url(url)
     .start();
@@ -47,7 +47,7 @@ new RxDownload()
 ```java
 new RxDownload()
     .activity(this)
-    .saveTo(testFilePath)
+    .saveTo(path)
     .listener(progress -> { // Update your progress bar through the listener
         progressBar.setProgress(progress);
 
