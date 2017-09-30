@@ -84,3 +84,6 @@ Look [here](https://github.com/MattiaPrimavera/RxTransfer/tree/master/app/src/ma
 
 ## Contributions / Feature requests
 Feel free to open an **issue** to propose a feature request or a **pull request** if you wanna contribute ;)
+
+## Medium
+**Medium** article introducing the library can be found [here](https://medium.com/@sconqua/rxtransfer-track-http-download-android-96b27411a573)
