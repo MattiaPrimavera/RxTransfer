@@ -9,11 +9,10 @@ import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import java.io.File;
 import io.reactivex.Observable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
 
 public class RxDownload {
+    private static int loaderId = 0;
     private String mUrl;
     private String mSaveTo;
     private Activity mActivity;
@@ -31,6 +30,8 @@ public class RxDownload {
         mConsumer = null;
         mUseListener = false;
         mCompletedMessage = null;
+
+        loaderId++;
     }
 
     public RxDownload url(String url) {
@@ -93,8 +94,7 @@ public class RxDownload {
                     File saveTo = Tools.getOrCreateFile(mSaveTo);
                     Observable<DownloadService.TransferProgress> download = DownloadService
                         .downloadFile(saveTo, mUrl)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
+                        .compose(RxTools.bind(mActivity, loaderId))
                         .doOnSubscribe(disposable -> {
                             if(mProgressDialogFragment != null) showProgressDialog();
                         })

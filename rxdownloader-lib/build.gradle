@@ -50,4 +50,5 @@ dependencies {
     compile 'com.cantrowitz:rxbroadcast:2.0.0'
     compile 'com.squareup.okhttp3:okhttp-urlconnection:3.4.1'
     compile 'com.squareup.okhttp3:logging-interceptor:3.4.1'
+    compile 'com.philosophicalhacker.rxloader:rxloader:0.4.0'
 }
