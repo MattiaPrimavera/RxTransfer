@@ -28,8 +28,7 @@ public class ProgressBarListSample extends AppCompatActivity {
             progress.setMax(100);
             progress.setIndeterminate(false);
 
-            new RxDownload()
-                .activity(this)
+            new RxDownload(this, 1)
                 .saveTo(testFilePath)
                 .progressInto(progress)
                 .url(url)

@@ -22,11 +22,10 @@ public class ProgressBarSample extends AppCompatActivity {
         String url = "http://ipv4.download.thinkbroadband.com/200MB.zip";
 
         Log.d("TEST", "Sample Bar download eample");
-        new RxDownload()
-                .activity(this)
-                .saveTo(testFilePath)
-                .progressInto(progress)
-                .url(url)
-                .start();
+        new RxDownload(this, 2)
+            .saveTo(testFilePath)
+            .progressInto(progress)
+            .url(url)
+            .start();
     }
 }

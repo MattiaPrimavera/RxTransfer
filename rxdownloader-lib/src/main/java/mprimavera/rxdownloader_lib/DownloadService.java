@@ -1,5 +1,7 @@
 package mprimavera.rxdownloader_lib;
 
+import android.util.Log;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -65,84 +67,84 @@ public class DownloadService {
     public static final int BUFFER_LENGTH = 2048;
 
     public static Observable<TransferProgress> downloadFile(final File outputFile, final String url) {
-        return Observable.<TransferProgress>create(new ObservableOnSubscribe<TransferProgress>() {
-            @Override
-            public void subscribe(@NonNull ObservableEmitter<TransferProgress> emitter) throws Exception {
-                int percent = 0;
+        return Observable.<TransferProgress>create(emitter -> {
+            int percent = 0;
 
-                if (false) { // Check network connected
-                    emitter.onError(new Exception());
-                } else {
-                    InputStream input = null;
-                    OutputStream output = null;
-                    try {
-                        Request request = new Request.Builder()
-                                .url(url)
-                                .build();
+            if (false) { // Check network connected
+                emitter.onError(new Exception());
+            } else {
+                InputStream input = null;
+                OutputStream output = null;
+                try {
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .build();
 
-                        okhttp3.Response response = getOkHttpClient().newCall(request).execute();
-                        if (response.isSuccessful()) {
-                            input = response.body().byteStream();
-                            long tlength = response.body().contentLength();
+                    okhttp3.Response response = getOkHttpClient().newCall(request).execute();
+                    if (response.isSuccessful()) {
+                        input = response.body().byteStream();
+                        long tlength = response.body().contentLength();
 
-                            output = new FileOutputStream(outputFile);
-                            byte data[] = new byte[BUFFER_LENGTH];
+                        output = new FileOutputStream(outputFile);
+                        byte data[] = new byte[BUFFER_LENGTH];
 
-                            emitter.onNext(new TransferProgress(percent, 0, 0, tlength));
-                            long total = 0;
-                            int count;
+                        emitter.onNext(new TransferProgress(percent, 0, 0, tlength));
+                        long total = 0;
+                        int count;
 
-                            long totalDownloaded = 0;
-                            long firstTime = System.currentTimeMillis();
-                            while ((count = input.read(data)) != -1) {
-                                total += count;
+                        long totalDownloaded = 0;
+                        long firstTime = System.currentTimeMillis();
 
-                                output.write(data, 0, count);
+                        while ((count = input.read(data)) != -1) {
+                            total += count;
 
-                                int newPercent = (int) (total * 100 / tlength);
-                                if (newPercent != percent) {
-                                    long secondTime = System.currentTimeMillis();
-                                    double diff = (secondTime - firstTime) / 1000.0;
-                                    double speed = (total - totalDownloaded / 1024.0 / 1024.0) / diff;
-                                    totalDownloaded = total;
+                            output.write(data, 0, count);
 
-                                    DecimalFormat df = new DecimalFormat("0.00##");
-                                    String result = df.format(speed);
+                            int newPercent = (int) (total * 100 / tlength);
+                            if (newPercent != percent) {
+                                long secondTime = System.currentTimeMillis();
+                                double diff = (secondTime - firstTime) / 1000.0;
+                                double speed = (total - totalDownloaded / 1024.0 / 1024.0) / diff;
+                                totalDownloaded = total;
 
-                                    percent = newPercent;
-                                    emitter.onNext(new TransferProgress(percent, Double.parseDouble(result), total, tlength));
-                                    if(percent == 100) {
-                                        emitter.onComplete();
-                                        output.flush();
-                                        output.close();
-                                        input.close();
-                                        break;
-                                    }
+                                DecimalFormat df = new DecimalFormat("0.00##");
+                                String result = df.format(speed);
 
-                                    firstTime = secondTime;
+                                percent = newPercent;
+                                emitter.onNext(new TransferProgress(percent, Double.parseDouble(result), total, tlength));
+                                if (percent == 100) {
+                                    emitter.onComplete();
+                                    output.flush();
+                                    output.close();
+                                    input.close();
+                                    break;
                                 }
-                            }
-                        }
-                    } catch (IOException e) {
-                        emitter.onError(e);
-                    } finally {
-                        if (input != null) {
-                            try {
-                                input.close();
-                            } catch (IOException ioe) {
-                            }
-                        }
-                        if (output != null) {
-                            try {
-                                output.close();
-                            } catch (IOException e) {
+
+                                firstTime = secondTime;
                             }
                         }
                     }
+                } catch (java.io.InterruptedIOException interruptedException) {
+                    // Do nothing
+                } catch (IOException e) {
+                    emitter.onError(e);
+                } finally {
+                    if (input != null) {
+                        try {
+                            input.close();
+                        } catch (IOException ioe) {
+                        }
+                    }
+                    if (output != null) {
+                        try {
+                            output.close();
+                        } catch (IOException e) {
+                        }
+                    }
                 }
-
-                emitter.onComplete();
             }
+
+            emitter.onComplete();
         });
     }
 

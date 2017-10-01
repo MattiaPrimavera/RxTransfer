@@ -2,6 +2,7 @@ package mprimavera.rxdownloader_lib;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Application;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -14,29 +15,33 @@ import java.util.HashMap;
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 public class RxDownload {
-    private static int loaderId = 0;
     private String mUrl;
     private String mSaveTo;
     private Activity mActivity;
-    private int progress;
     private Consumer<Integer> mConsumer;
     private boolean mUseListener, mShowProgressDialog;
     private ProgressBar mProgress;
     private String mCompletedMessage;
     private View mView;
-    private static HashMap<String, Observable> mCache = new HashMap<>();
+    private int mId;
+    private Application.ActivityLifecycleCallbacks mActivityLifecycleCallbacks;
+    private static Disposable mDownload;
+    private static HashMap<Integer, Observable<DownloadService.TransferProgress>> mCache = new HashMap<>();
 
-    public RxDownload() {
+    public RxDownload(Activity activity, int id) {
+        mId = id;
+        mActivity = activity;
         mProgress = null;
         mConsumer = null;
         mUseListener = false;
         mCompletedMessage = null;
-
-        loaderId++;
+        mActivityLifecycleCallbacks = getLyfecicleCallbacks();
+        activity.getApplication().registerActivityLifecycleCallbacks(mActivityLifecycleCallbacks);
     }
 
     public RxDownload url(String url) {
@@ -82,11 +87,6 @@ public class RxDownload {
         return this;
     }
 
-    public RxDownload activity(Activity activity) {
-        mActivity = activity;
-        return this;
-    }
-
     public RxDownload start() {
         if(!mUseListener && mProgress == null && !mShowProgressDialog)
             return null;
@@ -98,11 +98,8 @@ public class RxDownload {
                 if (granted) {
                     // Create Destination File
                     File saveTo = Tools.getOrCreateFile(mSaveTo);
-                    Log.d("TEST", "STARTING download");
-                    download(mUrl, saveTo)
+                    mDownload = download(mUrl, saveTo)
                         .subscribe(transferProgress -> {
-                            Log.d("TEST", "Subscriber called ... current progress is ... ");
-                            Log.d("TEST", "progress: " + transferProgress.getProgress());
                             int progress1 = transferProgress.getProgress();
                             if(mProgress != null) {
                                 mProgress.setProgress(progress1);
@@ -124,20 +121,19 @@ public class RxDownload {
     }
 
     public Observable<DownloadService.TransferProgress> download(String url, File saveTo) {
-        if(mCache.containsKey(url)) {
-            Log.d("TEST", "Returning cached observable");
-            return mCache.get(url);
+        if(mCache.containsKey(mId)) {
+            Observable<DownloadService.TransferProgress> observable = mCache.get(mId);
+            return observable;
         }
 
         // Download Observable
         Observable<DownloadService.TransferProgress> download = DownloadService
                 .downloadFile(saveTo, url)
-                .compose(RxTools.applySchedulers())
-//                .compose(RxTools.bind(mActivity, loaderId))
                 .doOnError(throwable -> {
                     if (mView != null)
                         DialogBuilder.showMessage("Network resource not available", mView);
                 })
+                .compose(RxTools.applySchedulers())
                 .doOnTerminate(() -> {
                     if(mCompletedMessage != null) {
                         DialogBuilder.showMessage(mCompletedMessage, mView);
@@ -152,7 +148,7 @@ public class RxDownload {
 
         // Subscr@ibe to Observable
         download = download.cache();
-        mCache.put(url, download);
+        mCache.put(mId, download);
         return download;
     }
 
@@ -161,7 +157,6 @@ public class RxDownload {
             showProgressDialog(activity, messageRes);
             return true;
         })
-//        .compose(RxTools.bind(activity, loaderId+1))
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .flatMap(t -> observable)
@@ -169,7 +164,6 @@ public class RxDownload {
     }
 
     public static void showProgressDialog(Activity activity, int messageRes) {
-        Log.d("TEST", "ShowProgressDialog called");
         Bundle args = new Bundle();
         args.putInt("message_res", messageRes);
 
@@ -184,10 +178,29 @@ public class RxDownload {
     }
 
     public static void dismissProgressDialog() {
-        Log.d("TEST", "Dismiss progressDialog called");
         if (RxTools.progressDialog.getActivity() != null) {
             RxTools.progressDialog.dismissAllowingStateLoss();
         }
         RxTools.progressDialog = null;
+    }
+
+    public Application.ActivityLifecycleCallbacks getLyfecicleCallbacks() {
+        return new Application.ActivityLifecycleCallbacks() {
+            @Override public void onActivityCreated(Activity activity, Bundle bundle) {}
+            @Override public void onActivityStarted(Activity activity) {}
+            @Override public void onActivityResumed(Activity activity) {}
+            @Override public void onActivityPaused(Activity activity) {}
+            @Override public void onActivityStopped(Activity activity) {}
+            @Override public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {}
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+                if(activity.isFinishing()) { // Back pressed case
+                    if(!mDownload.isDisposed()) {
+                        mDownload.dispose();
+                        mCache.remove(mUrl + mSaveTo + mId);
+                    }
+                }
+            }
+        };
     }
 }

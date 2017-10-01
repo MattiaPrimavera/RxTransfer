@@ -46,8 +46,7 @@ public class MainActivity extends AppCompatActivity
         mLayout = findViewById(R.id.mainLayout);
 
         findViewById(R.id.startDownload).setOnClickListener(view -> {
-            new RxDownload()
-                .activity(this)
+            new RxDownload(this, 1)
                 .saveTo(testFilePath)
                 .url(url)
                 .showDialog()

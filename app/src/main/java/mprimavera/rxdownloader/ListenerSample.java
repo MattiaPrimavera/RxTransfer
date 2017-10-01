@@ -27,8 +27,7 @@ public class ListenerSample extends AppCompatActivity {
         String testFilePath = path + "/testFile";
         String url = "http://ipv4.download.thinkbroadband.com/200MB.zip";
 
-        new RxDownload()
-            .activity(this)
+        new RxDownload(this, 1)
             .saveTo(testFilePath)
             .listener(progress -> {
                 progressBar.setProgress(progress);

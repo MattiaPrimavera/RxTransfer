@@ -38,6 +38,16 @@ public class ProgressDialog extends DialogFragment {
         loaderId++;
     }
 
+    public ProgressDialog() {
+        mView = getLayoutInflater().inflate(R.layout.progress_dialog, null);
+        mProgress = mView.findViewById(R.id.progress);
+        mMessage = mView.findViewById(R.id.progressText);
+        mSpeed = mView.findViewById(R.id.speedText);
+        mTotal = mView.findViewById(R.id.totalText);
+        this.setCancelable(false);
+        loaderId++;
+    }
+
     public void setContext(Context context) {
         mContext = context;
     }
@@ -50,7 +60,6 @@ public class ProgressDialog extends DialogFragment {
             Observable
                 .empty()
                 .delay(1, TimeUnit.SECONDS)
-                .compose(RxTools.bind((Activity) mContext, loaderId))
                 .subscribe(o -> this.dismiss());
         }
     }
@@ -72,16 +81,22 @@ public class ProgressDialog extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        int messageResId = getArguments().getInt("message_res", 0);
-        return createProgressDialog(getActivity(), messageResId);
+        return createProgressDialog(getActivity());
     }
 
-    public Dialog createProgressDialog(Context context, @StringRes int messageResId) {
-        mMessage.setText(messageResId);
+    public Dialog createProgressDialog(Context context) {
+//        mMessage.setText(messageResId);
         return new AlertDialog.Builder(context)
                 .setView(mView)
                 .create();
     }
-}
 
+    @Override
+    public void onDestroyView() {
+        if (getDialog() != null && getRetainInstance()) {
+            getDialog().setDismissMessage(null);
+        }
+        super.onDestroyView();
+    }
+}
 
