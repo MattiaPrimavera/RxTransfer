@@ -1,12 +1,15 @@
 # RxTransfer
 Never been this easy to download a file while tracking downloading progress! 
 
-**RxTransfer** automatize the following tasks : 
-- create destination file if not existing
-- download the file from the url in a background thread 
-- show error message on error 
-- show message on successfull download
-- download progress exposed in different ways
+**RxTransfer** transparently handles the following tasks : 
+- asking the user for **writing permissions** if the device requires runtime permissions handling
+- creating destination file if not existing
+- downloading the file from the url in a background thread 
+- showing error message on error 
+- showing message on successfull download
+- exposing progress in different ways 
+- handling orientation change (work in progress for **Progress Dialog**, done for **Listener** / **Progress Bar**) 
+- handle **backPressed**: download is not stop if not desired (**backPressed** listener soon coming)
 
 ## Usage
 Here's the different ways in which **download progress** can be tracked:
