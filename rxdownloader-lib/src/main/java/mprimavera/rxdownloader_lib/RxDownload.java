@@ -104,12 +104,12 @@ public class RxDownload {
                             } else if (mUseListener) {
                                 mConsumer.accept(progress1);
                             } else if(RxTools.progressDialog != null) {
-                                RxTools.progressDialog.setProgress(progress1);
                                 RxTools.progressDialog.setSpeed(transferProgress.getSpeed());
                                 RxTools.progressDialog.setTotal(
                                         transferProgress.getTotal(),
                                         transferProgress.getLength()
                                 );
+                                RxTools.progressDialog.setProgress(progress1);
                             }
                         }, throwable -> {});
                 }
@@ -135,10 +135,6 @@ public class RxDownload {
                 .doOnTerminate(() -> {
                     if(mCompletedMessage != null) {
                         DialogBuilder.showMessage(mCompletedMessage, mView);
-                    }
-
-                    if(mShowProgressDialog) {
-                        RxTools.progressDialog.dismiss();
                     }
                 });
 

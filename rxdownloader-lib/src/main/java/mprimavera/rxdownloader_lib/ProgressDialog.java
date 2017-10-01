@@ -12,6 +12,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import java.util.concurrent.TimeUnit;
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 public class ProgressDialog extends DialogFragment {
     private final String SPEED_SUFFIX = " Mb/s";
@@ -52,6 +54,8 @@ public class ProgressDialog extends DialogFragment {
             Observable
                 .empty()
                 .delay(1, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
                 .subscribe(o -> this.dismiss());
         }
     }
