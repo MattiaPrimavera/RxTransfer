@@ -8,7 +8,7 @@ Never been this easy to download a file while tracking downloading progress!
 - showing error message on error 
 - showing message on successfull download
 - exposing progress in different ways 
-- handling orientation change (work in progress for **Progress Dialog**, done for **Listener** / **Progress Bar**) 
+- handling orientation change 
 - handle **backPressed**: download is not stop if not desired (**backPressed** listener soon coming)
 
 ## Usage
@@ -78,7 +78,7 @@ And add next dependencies in the build.gradle of the module:
 
 ```
 dependencies {
-    compile 'com.github.MattiaPrimavera:RxTransfer:0.15'
+    compile 'com.github.MattiaPrimavera:RxTransfer:0.16'
 }
 ```
 
