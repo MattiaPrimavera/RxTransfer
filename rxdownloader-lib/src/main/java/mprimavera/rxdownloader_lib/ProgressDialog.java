@@ -1,23 +1,17 @@
 package mprimavera.rxdownloader_lib;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
-import io.reactivex.ObservableTransformer;
-import io.reactivex.schedulers.Schedulers;
 
 public class ProgressDialog extends DialogFragment {
     private final String SPEED_SUFFIX = " Mb/s";
@@ -25,7 +19,7 @@ public class ProgressDialog extends DialogFragment {
     private TextView mMessage, mSpeed, mTotal;
     private ProgressBar mProgress;
     private View mView;
-    private static int loaderId = 0;
+    private static AlertDialog dialog = null;
 
     public ProgressDialog(Context context) {
         mContext = context;
@@ -35,7 +29,6 @@ public class ProgressDialog extends DialogFragment {
         mSpeed = mView.findViewById(R.id.speedText);
         mTotal = mView.findViewById(R.id.totalText);
         this.setCancelable(false);
-        loaderId++;
     }
 
     public ProgressDialog() {
@@ -45,7 +38,6 @@ public class ProgressDialog extends DialogFragment {
         mSpeed = mView.findViewById(R.id.speedText);
         mTotal = mView.findViewById(R.id.totalText);
         this.setCancelable(false);
-        loaderId++;
     }
 
     public void setContext(Context context) {
@@ -85,18 +77,12 @@ public class ProgressDialog extends DialogFragment {
     }
 
     public Dialog createProgressDialog(Context context) {
-//        mMessage.setText(messageResId);
-        return new AlertDialog.Builder(context)
-                .setView(mView)
-                .create();
-    }
-
-    @Override
-    public void onDestroyView() {
-        if (getDialog() != null && getRetainInstance()) {
-            getDialog().setDismissMessage(null);
+        if(dialog == null) {
+            dialog = new AlertDialog.Builder(context)
+                    .setView(mView)
+                    .create();
         }
-        super.onDestroyView();
+        return dialog;
     }
 }
 

@@ -5,13 +5,11 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import java.io.File;
 import java.util.HashMap;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -138,6 +136,10 @@ public class RxDownload {
                     if(mCompletedMessage != null) {
                         DialogBuilder.showMessage(mCompletedMessage, mView);
                     }
+
+                    if(mShowProgressDialog) {
+                        RxTools.progressDialog.dismiss();
+                    }
                 });
 
         // Show Progress Dialog Fragment
@@ -167,10 +169,8 @@ public class RxDownload {
         Bundle args = new Bundle();
         args.putInt("message_res", messageRes);
 
-        if(RxTools.progressDialog == null) {
-            RxTools.progressDialog = new ProgressDialog(activity);
-            RxTools.progressDialog.setArguments(args);
-        }
+        RxTools.progressDialog = new ProgressDialog(activity);
+        RxTools.progressDialog.setArguments(args);
         RxTools.progressDialog.show(
             ((FragmentActivity)activity).getSupportFragmentManager(),
             "progressdialog"
@@ -186,7 +186,8 @@ public class RxDownload {
 
     public Application.ActivityLifecycleCallbacks getLyfecicleCallbacks() {
         return new Application.ActivityLifecycleCallbacks() {
-            @Override public void onActivityCreated(Activity activity, Bundle bundle) {}
+            @Override public void onActivityCreated(Activity activity, Bundle bundle) {
+            }
             @Override public void onActivityStarted(Activity activity) {}
             @Override public void onActivityResumed(Activity activity) {}
             @Override public void onActivityPaused(Activity activity) {}
